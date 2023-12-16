@@ -1,0 +1,5 @@
+
+config mwan3helper 'config'
+	option dns '192.168.6.2'
+	option enabled '0'
+
