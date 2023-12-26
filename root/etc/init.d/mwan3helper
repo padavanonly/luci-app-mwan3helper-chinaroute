@@ -36,19 +36,24 @@ EOF
     ip rule del table 200 
     ip rule add table 200 fwmark 200
     
-    iptables -t mangle -D PREROUTING -i br-lan -m conntrack --ctstate NEW -j MARK --set-mark 200
-    iptables -t mangle -D PREROUTING -i br-lan  -m set --match-set cn dst  -j MARK --set-mark 0
-    iptables -t mangle -D PREROUTING -s $dns  -j MARK --set-mark 0
-    iptables -t mangle -D PREROUTING -i br-lan  -m conntrack --ctstate NEW -m set --match-set gfwlist dst  -j MARK --set-mark 200
+    iptables -t mangle -D PREROUTING -i br-lan -j MARK --set-mark 200
+    iptables -t mangle -D PREROUTING -i br-lan -m set --match-set cn dst  -j MARK --set-mark 0
+    iptables -t mangle -D PREROUTING -s $dns   -j MARK --set-mark 0
+    iptables -t mangle -D PREROUTING -i br-lan  -m set --match-set gfwlist dst  -j MARK --set-mark 200
     if [ $mode -eq 0 ];  then
-    iptables -t mangle -A PREROUTING -i br-lan  -j MARK --set-mark 200
-    iptables -t mangle -A PREROUTING -i br-lan  -m set --match-set cn dst  -j MARK --set-mark 0
-    else 
-    iptables -t mangle -A PREROUTING -i br-lan -m conntrack --ctstate NEW  -m set --match-set gfwlist dst  -j MARK --set-mark 200
+    iptables -t mangle -A PREROUTING -i br-lan -j MARK --set-mark 200
+    iptables -t mangle -A PREROUTING -i br-lan -m set --match-set cn dst  -j MARK --set-mark 0
     fi
-    iptables -t mangle -A PREROUTING -s $dns  -j MARK --set-mark 0
+    iptables -t mangle -A PREROUTING -i br-lan -m set --match-set gfwlist dst  -j MARK --set-mark 200
+    iptables -t mangle -A PREROUTING -s $dns   -j MARK --set-mark 0
     sed -i '/\/etc\/init.d\/mwan3helper start/d' /etc/firewall.user
     echo "/etc/init.d/mwan3helper start" >> /etc/firewall.user
+    ipset add gfwlist 91.108.4.0/22
+    ipset add gfwlist 91.108.8.0/22
+    ipset add gfwlist 91.108.56.0/22
+    ipset add gfwlist 95.161.64.0/20
+    ipset add gfwlist 149.154.160.0/22
+    ipset add gfwlist 149.154.164.0/22
   fi
 }
 
@@ -60,10 +65,10 @@ stop_service(){
     ip route del default table 200
 
     ip rule del table 200 
-    iptables -t mangle -D PREROUTING -i br-lan -m conntrack --ctstate NEW -m set --match-set gfwlist dst  -j MARK --set-mark 200
-    iptables -t mangle -D PREROUTING -i br-lan  -j MARK --set-mark 200
-    iptables -t mangle -D PREROUTING -i br-lan  -m set --match-set cn dst -j MARK --set-mark 0
-    iptables -t mangle -D PREROUTING -s $dns  -j MARK --set-mark 0
+     iptables -t mangle -D PREROUTING -i br-lan -j MARK --set-mark 200
+    iptables -t mangle -D PREROUTING -i br-lan -m set --match-set cn dst  -j MARK --set-mark 0
+    iptables -t mangle -D PREROUTING -s $dns   -j MARK --set-mark 0
+    iptables -t mangle -D PREROUTING -i br-lan  -m set --match-set gfwlist dst  -j MARK --set-mark 200
     sed -i '/\/etc\/init.d\/mwan3helper start/d' /etc/firewall.user
     
 }
