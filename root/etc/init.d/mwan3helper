@@ -31,20 +31,20 @@ conf-dir=/var/etc/dnsmasq-mwan3.d
 EOF
     fi
     /etc/init.d/dnsmasq restart
-    ip route del default via $dns dev $dev  table 200
+    ip route del default table 200
     ip route add default via $dns dev $dev table 200
-    ip rule del table 200 fwmark  200
+    ip rule del table 200 
     ip rule add table 200 fwmark 200
     
-    iptables -t mangle -D PREROUTING -i br-lan  -j MARK --set-mark 200
+    iptables -t mangle -D PREROUTING -i br-lan -m conntrack --ctstate NEW -j MARK --set-mark 200
     iptables -t mangle -D PREROUTING -i br-lan  -m set --match-set cn dst  -j MARK --set-mark 0
     iptables -t mangle -D PREROUTING -s $dns  -j MARK --set-mark 0
-    iptables -t mangle -D PREROUTING -i br-lan  -m set --match-set gfwlist dst  -j MARK --set-mark 200
+    iptables -t mangle -D PREROUTING -i br-lan  -m conntrack --ctstate NEW -m set --match-set gfwlist dst  -j MARK --set-mark 200
     if [ $mode -eq 0 ];  then
     iptables -t mangle -A PREROUTING -i br-lan  -j MARK --set-mark 200
     iptables -t mangle -A PREROUTING -i br-lan  -m set --match-set cn dst  -j MARK --set-mark 0
     else 
-    iptables -t mangle -A PREROUTING -i br-lan  -m set --match-set gfwlist dst  -j MARK --set-mark 200
+    iptables -t mangle -A PREROUTING -i br-lan -m conntrack --ctstate NEW  -m set --match-set gfwlist dst  -j MARK --set-mark 200
     fi
     iptables -t mangle -A PREROUTING -s $dns  -j MARK --set-mark 0
     sed -i '/\/etc\/init.d\/mwan3helper start/d' /etc/firewall.user
@@ -57,10 +57,10 @@ stop_service(){
     /etc/init.d/dnsmasq restart
     dns=$(uci get mwan3helper.config.dns 2>/dev/null)
     dev=$(uci get mwan3helper.config.dev 2>/dev/null)
-    ip route del default via $dns dev $dev table 200
+    ip route del default table 200
 
-    ip rule del table 200 fwmark  200
-    iptables -t mangle -D PREROUTING -i br-lan  -m set --match-set gfwlist dst  -j MARK --set-mark 200
+    ip rule del table 200 
+    iptables -t mangle -D PREROUTING -i br-lan -m conntrack --ctstate NEW -m set --match-set gfwlist dst  -j MARK --set-mark 200
     iptables -t mangle -D PREROUTING -i br-lan  -j MARK --set-mark 200
     iptables -t mangle -D PREROUTING -i br-lan  -m set --match-set cn dst -j MARK --set-mark 0
     iptables -t mangle -D PREROUTING -s $dns  -j MARK --set-mark 0
@@ -76,4 +76,3 @@ reload_service() {
 service_triggers() {
 	procd_add_reload_trigger "mwan3helper"
 }
-
